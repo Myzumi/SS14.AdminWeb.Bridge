@@ -4,9 +4,9 @@ const path = require("path");
 const logger = require("./logger");
 const { loadConfig } = require("./config");
 const { checkForUpdate } = require("./updater");
-const { baseDir } = require("./paths");
+const { dataDir } = require("./paths");
 
-const CURRENT_POINTER = path.join(baseDir(), "bin", "current.json");
+const CURRENT_POINTER = path.join(dataDir(), "bin", "current.json");
 const CRASH_BACKOFF_MIN_MS = 2000;
 const CRASH_BACKOFF_MAX_MS = 30000;
 const HANDOVER_WINDOW_TIMEOUT_MS = 60000;

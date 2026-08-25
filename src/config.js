@@ -2,11 +2,11 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const logger = require("./logger");
-const { baseDir } = require("./paths");
+const { baseDir, dataDir } = require("./paths");
 
 const VERSION = require("../package.json").version;
 
-const IDENTITY_DIR = path.join(baseDir(), ".bridge");
+const IDENTITY_DIR = dataDir();
 const IDENTITY_FILE = path.join(IDENTITY_DIR, "identity.json");
 const ENV_FILE = path.join(baseDir(), ".env");
 

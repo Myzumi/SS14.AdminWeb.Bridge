@@ -1,6 +1,8 @@
 const path = require("path");
 const { baseDir } = require("./src/paths");
 
+if (!process.env.BRIDGE_HOME) process.env.BRIDGE_HOME = baseDir();
+
 require("dotenv").config({ path: path.join(baseDir(), ".env") });
 
 if (process.env.BRIDGE_WORKER) {
