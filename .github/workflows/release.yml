@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+
+      - run: npx @yao-pkg/pkg . --targets node18-win-x64,node18-linux-x64 --output dist/ss14-adminweb-bridge
+
+      - name: Rename binaries and generate checksums
+        run: |
+          mv dist/ss14-adminweb-bridge-win.exe dist/ss14-adminweb-bridge-win-x64.exe || true
+          mv dist/ss14-adminweb-bridge-linux dist/ss14-adminweb-bridge-linux-x64 || true
+          cd dist
+          for f in ss14-adminweb-bridge-win-x64.exe ss14-adminweb-bridge-linux-x64; do
+            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
