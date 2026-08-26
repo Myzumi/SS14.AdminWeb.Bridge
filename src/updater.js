@@ -4,9 +4,9 @@ const fs = require("fs");
 const path = require("path");
 const logger = require("./logger");
 const { VERSION } = require("./config");
-const { baseDir } = require("./paths");
+const { dataDir } = require("./paths");
 
-const BIN_DIR = path.join(baseDir(), "bin");
+const BIN_DIR = path.join(dataDir(), "bin");
 
 function platformSuffix() {
   if (process.platform === "win32") return "win-x64.exe";

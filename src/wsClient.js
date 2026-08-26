@@ -11,10 +11,6 @@ const RECONNECT_MAX_MS = 60000;
 const HEARTBEAT_INTERVAL_MS = 30000;
 const STATS_INTERVAL_MS = 5 * 60 * 1000;
 
-// The webserver builds the SQL (its query logic stays private) and sends the finished query text +
-// params over the tunnel; the Bridge just runs it against the local Postgres and returns the rows.
-// The guarded pool (see postgres.js) scans every query for blocked write keywords first, so
-// BLOCK_WRITE_COMMANDS is still enforced here, on the database owner's side.
 async function runQuery(pool, request, stats) {
   const { id, sql, params = [] } = request;
   const startedAt = Date.now();
@@ -175,6 +171,7 @@ function startWsClient(config, identity) {
         logger.ready(
           `[Bridge] Tunnel established for server "${remoteConfig.serverName}" (${useEncryption ? "encrypted" : "plaintext"})`,
         );
+        send({ type: "ready" });
         notifySupervisor({ type: "ready" });
         return;
       }
