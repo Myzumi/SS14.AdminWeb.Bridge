@@ -153,6 +153,18 @@ function startWsClient(config, identity) {
         return;
       }
 
+      try {
+        await handleMessage(message);
+      } catch (error) {
+        logger.error(
+          `[Bridge] Failed handling "${message?.type}" message: ${error.message}`,
+        );
+        if (ws && ws.readyState === WebSocket.OPEN)
+          ws.close(4000, "handler error");
+      }
+    });
+
+    async function handleMessage(message) {
       if (message.type === "hello-ack") {
         const remoteNonce = Buffer.from(message.nonce, "base64");
         const sessionKeys = deriveSessionKeys(
@@ -184,7 +196,7 @@ function startWsClient(config, identity) {
       if (message.type === "rpc") {
         send(await runQuery(pool, message, stats));
       }
-    });
+    }
 
     ws.on("close", (code, reason) => {
       clearInterval(heartbeatTimer);
