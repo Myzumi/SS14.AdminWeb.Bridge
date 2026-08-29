@@ -1,13 +1,12 @@
 {
   "name": "ss14-adminweb-bridge",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "description": "Self-hosted tunnel that relays SS14.AdminWeb queries to a firewalled Postgres game server database.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "worker": "cross-env BRIDGE_WORKER=1 node index.js",
-    "package": "pkg .",
-    "test:sentry": "node scripts/verify-sentry.js"
+    "package": "pkg ."
   },
   "bin": "index.js",
   "pkg": {
