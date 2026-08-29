@@ -1,6 +1,5 @@
 const { Pool } = require("pg");
 const logger = require("./logger");
-const sentry = require("./sentry");
 
 const BLOCKED_KEYWORDS = [
   "DELETE",
@@ -50,7 +49,6 @@ function createGuardedPool(pgConfig, blockWriteCommands) {
 
   pool.on("error", (err) => {
     logger.error("[Bridge] Unexpected Postgres pool error: " + err.message);
-    sentry.captureException(err, { context: "postgres.pool" });
   });
 
   return pool;
