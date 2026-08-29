@@ -5,6 +5,8 @@ if (!process.env.BRIDGE_HOME) process.env.BRIDGE_HOME = baseDir();
 
 require("dotenv").config({ path: path.join(baseDir(), ".env") });
 
+require("./src/sentry").setupGlobalHandlers();
+
 if (process.env.BRIDGE_WORKER) {
   require("./src/index").main();
 } else {

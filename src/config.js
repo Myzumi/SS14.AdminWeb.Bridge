@@ -37,6 +37,9 @@ UPDATE_REPO=Myzumi/SS14.AdminWeb.Bridge
 # Optional: set to 1/true to log every relayed query (method + duration). Off by default; a 5-minute
 # summary line is always logged regardless.
 DEBUG=
+
+# Optional: set to 1/true to send error Reports to us.
+BRIDGE_ENABLE_TELEMETRY=
 `;
 
 function parseBool(value, def) {
