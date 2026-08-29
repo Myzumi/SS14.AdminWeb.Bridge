@@ -5,6 +5,7 @@ const logger = require("./logger");
 const { loadConfig } = require("./config");
 const { checkForUpdate } = require("./updater");
 const { dataDir } = require("./paths");
+const sentry = require("./sentry");
 
 const CURRENT_POINTER = path.join(dataDir(), "bin", "current.json");
 const CRASH_BACKOFF_MIN_MS = 2000;
@@ -65,13 +66,30 @@ function runSupervisor() {
       logger.warn(
         `[Bridge] Worker exited unexpectedly (code ${code}), restarting in ${Math.round(crashBackoff / 1000)}s`,
       );
+      sentry.captureException(
+        new Error(`Bridge worker exited unexpectedly (code ${code})`),
+        {
+          context: "supervisor.workerExit",
+          tags: {
+            "exit.code": String(code),
+            "backoff.ms": String(crashBackoff),
+          },
+        },
+      );
+
       setTimeout(startActiveWorker, crashBackoff);
       crashBackoff = Math.min(crashBackoff * 2, CRASH_BACKOFF_MAX_MS);
     });
   }
 
   function handleActiveMessage(message) {
-    if (message.type === "ready") crashBackoff = CRASH_BACKOFF_MIN_MS;
+    if (message.type === "ready") {
+      crashBackoff = CRASH_BACKOFF_MIN_MS;
+      // The worker learned the DSN from the server; adopt it so crashes can be reported from here
+      // too. Until the first successful connection the supervisor has nothing to report with, so a
+      // crash loop that never reaches "ready" stays local-only.
+      if (message.sentry) sentry.init(message.sentry);
+    }
     if (message.type === "handover-window-open") beginCandidateHandover();
   }
 
