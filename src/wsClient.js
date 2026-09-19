@@ -9,6 +9,7 @@ const { createGuardedPool, testConnection } = require("./postgres");
 const RECONNECT_MIN_MS = 2000;
 const RECONNECT_MAX_MS = 60000;
 const HEARTBEAT_INTERVAL_MS = 30000;
+const HEARTBEAT_TIMEOUT_MS = 90000;
 const STATS_INTERVAL_MS = 5 * 60 * 1000;
 
 async function runQuery(pool, request, stats) {
@@ -62,6 +63,7 @@ function startWsClient(config, identity) {
   let reconnectTimer = null;
   let statsTimer = null;
   let reconnectDelay = RECONNECT_MIN_MS;
+  let lastHeartbeatAck = 0;
   let shuttingDown = false;
 
   // Rolling counters for the periodic summary line - reset each time we report.
@@ -164,15 +166,31 @@ function startWsClient(config, identity) {
         );
         envelope = useEncryption ? createEnvelope(sessionKeys) : null;
         reconnectDelay = RECONNECT_MIN_MS;
-        heartbeatTimer = setInterval(
-          () => send({ type: "heartbeat" }),
-          HEARTBEAT_INTERVAL_MS,
-        );
+        lastHeartbeatAck = 0;
+        heartbeatTimer = setInterval(() => {
+          if (
+            lastHeartbeatAck &&
+            Date.now() - lastHeartbeatAck > HEARTBEAT_TIMEOUT_MS
+          ) {
+            clearInterval(heartbeatTimer);
+            logger.warn(
+              `[Bridge] No heartbeat response for ${Math.round(HEARTBEAT_TIMEOUT_MS / 1000)}s, dropping the tunnel`,
+            );
+            ws.terminate();
+            return;
+          }
+          send({ type: "heartbeat" });
+        }, HEARTBEAT_INTERVAL_MS);
         logger.ready(
           `[Bridge] Tunnel established for server "${remoteConfig.serverName}" (${useEncryption ? "encrypted" : "plaintext"})`,
         );
         send({ type: "ready" });
         notifySupervisor({ type: "ready" });
+        return;
+      }
+
+      if (message.type === "heartbeat-ack") {
+        lastHeartbeatAck = Date.now();
         return;
       }
 

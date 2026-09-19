@@ -10,7 +10,7 @@ const IDENTITY_DIR = dataDir();
 const IDENTITY_FILE = path.join(IDENTITY_DIR, "identity.json");
 const ENV_FILE = path.join(baseDir(), ".env");
 
-const ENV_TEMPLATE = `# Token issued by DataSourceSettings.vue when you set a server's data source to "Bridge"
+const ENV_TEMPLATE = `# Token issued by SS14.AdminWeb's Game Server Tab when you set a server's data source to "Bridge"
 BRIDGE_TOKEN=
 
 # Base URL of the SS14.AdminWeb webserver this Bridge reports to
