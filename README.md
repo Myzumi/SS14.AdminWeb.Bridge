@@ -2,47 +2,24 @@
 
 The AdminWeb.Bridge is a Bridging Service that Connects a Protected Postgres Database to the SS14.AdminWeb Ecosystem.
 This is used if the Space Station 14 Postgres Database is behind either a Protected Firewall or has no access to the outside.
-This Bridge connects to https://ss14adminweb.myzumi.dev (Default Environment Variable), gets its Configuration from the Webservice and initiates a Websocket Connection afterwards.
+This Bridge connects to https://ss14adminweb.myzumi.dev (Default Environment Var), gets its Configuration from the Webservice and initiates a Websocket Connection afterwards.
 This Websocket will then function as a "Database Connection", Relaying Commands between the Webserver and the Postgres Database.
-
-## Sentry
-
-Version 0.1.2 Now comes with a Sentry Setup;
-This is currently Defaulted to off, which can be enabled via the environment Variable `BRIDGE_ENABLE_TELEMETRY`.
-Due to Complications with PGK (The Packaging that creates the Binaries), I've Shipped a custom written Sentry Client that is based on Axios.
-
-Out of Security Reasons, It will Redact any Environment Variables set and will only supply the Error as well as the Connected Server ID (SS14.AdminWeb Specific)
-
-The DSN URL Will be Supplied by the SS14.AdminWeb Environment when the Bridge gets its Configuration.
 
 ## Setup
 
-Clone the Repository or [Download the Release Binaries](https://github.com/Myzumi/SS14.AdminWeb.Bridge/releases) and put them on your Local Postgres Host.
-Either Copy the Repositories `.env.example` or run the bridge for the first time and it creates it next to the Binary.
-Note: Any Files the bridge needs or creates are put next to the Binary or its local .bridge folder next to it.
+Copy `.env.example` to `.env`, then in DataSourceSettings on your AdminWeb server set the Data Source to "Bridge" and generate a token. Paste that into `BRIDGE_TOKEN`, fill in `PG_*` for your local Postgres, then `npm install && npm start` (or just grab a packaged binary from Releases, no Node needed on the box).
 
-To Setup the Bridge, Go to your SS14.AdminWeb's Server, Select `Game Server` under the Settings and changing the Source to `Bridge`
-Then Create a new Token and fill it inside the Bridge's .env `BRIDGE_TOKEN`
-After that fill out your `PG_*` for your Local Postgres Database and Optionally edit the other Environment Variables to your Liking.
+First run generates an identity keypair under `.bridge/identity.json` and prints a fingerprint - cross-check it against DataSourceSettings once, that's your TOFU pin (same idea as an SSH host key).
 
-First run generates an identity keypair under `.bridge/identity.json` and prints a fingerprint, This one can be cross-checked in the Game Server's Source Settings.
+Env vars, mostly self explanatory:
 
-## Environment Variables
-
-- `BRIDGE_TOKEN`
-  Required to run the Bridge Software, Authenticates with the Supplied `WEBSERVER_URL` Server.
-- `WEBSERVER_URL`
-  Where the Service is located at, defaults to "https://ss14adminweb.myzumi.dev"
-- `PG_HOST` / `PG_PORT` / `PG_DATABASE` / `PG_USER` / `PG_PASSWORD`
-  Is your Local Postgres Access Data.
-- `BLOCK_WRITE_COMMANDS`
-  Blocks all SQL Commands that contains DELETE/UPDATE/INSERT/DROP/ALTER/TRUNCATE, This is enabled by Default for Security Reasons.
-- `ENCRYPT_TUNNEL` -
-  Encrypts the Tunnel with X25519 and AES-256-GCM on top of TLS, on by default
-- `AUTO_UPDATE`
-  Checks the Github Repository for any new Releases and Updates the Bridge Software Automatically without a downtime. Off by Default.
-- `UPDATE_CHECK_INTERVAL_MS` / `UPDATE_REPO`
-  The Interval to check the supplied Repository at.
+- `BRIDGE_TOKEN` - required, from DataSourceSettings
+- `WEBSERVER_URL` - defaults to `https://ss14adminweb.myzumi.dev`
+- `PG_HOST` / `PG_PORT` / `PG_DATABASE` / `PG_USER` / `PG_PASSWORD` - your local Postgres
+- `BLOCK_WRITE_COMMANDS` - blocks DELETE/UPDATE/INSERT/DROP/ALTER/TRUNCATE through the tunnel, on by default
+- `ENCRYPT_TUNNEL` - X25519 + AES-256-GCM on top of TLS, on by default
+- `AUTO_UPDATE` - checks GitHub Releases and hot-swaps to a newer checksum-verified binary with zero downtime, off by default
+- `UPDATE_CHECK_INTERVAL_MS` / `UPDATE_REPO` - only matter if `AUTO_UPDATE` is on
 
 ## Running as a service
 

@@ -5,7 +5,6 @@ const logger = require("./logger");
 const { deriveSessionKeys } = require("./crypto/handshake");
 const { createEnvelope } = require("./crypto/envelope");
 const { createGuardedPool, testConnection } = require("./postgres");
-const sentry = require("./sentry");
 
 const RECONNECT_MIN_MS = 2000;
 const RECONNECT_MAX_MS = 60000;
@@ -115,12 +114,6 @@ function startWsClient(config, identity) {
       return;
     }
 
-    sentry.init({
-      dsn: remoteConfig.sentryDsn,
-      environment: remoteConfig.sentryEnvironment,
-      serverId: remoteConfig.serverId,
-    });
-
     const pgOk = await testConnection(pool);
     if (!pgOk)
       logger.warn(
@@ -162,22 +155,6 @@ function startWsClient(config, identity) {
         return;
       }
 
-      try {
-        await handleMessage(message);
-      } catch (error) {
-        logger.error(
-          `[Bridge] Failed handling "${message?.type}" message: ${error.message}`,
-        );
-        sentry.captureException(error, {
-          context: "tunnel.handleMessage",
-          tags: { "message.type": String(message?.type || "unknown") },
-        });
-        if (ws && ws.readyState === WebSocket.OPEN)
-          ws.close(4000, "handler error");
-      }
-    });
-
-    async function handleMessage(message) {
       if (message.type === "hello-ack") {
         const remoteNonce = Buffer.from(message.nonce, "base64");
         const sessionKeys = deriveSessionKeys(
@@ -208,14 +185,7 @@ function startWsClient(config, identity) {
           `[Bridge] Tunnel established for server "${remoteConfig.serverName}" (${useEncryption ? "encrypted" : "plaintext"})`,
         );
         send({ type: "ready" });
-        notifySupervisor({
-          type: "ready",
-          sentry: {
-            dsn: remoteConfig.sentryDsn,
-            environment: remoteConfig.sentryEnvironment,
-            serverId: remoteConfig.serverId,
-          },
-        });
+        notifySupervisor({ type: "ready" });
         return;
       }
 
@@ -232,7 +202,7 @@ function startWsClient(config, identity) {
       if (message.type === "rpc") {
         send(await runQuery(pool, message, stats));
       }
-    }
+    });
 
     ws.on("close", (code, reason) => {
       clearInterval(heartbeatTimer);
