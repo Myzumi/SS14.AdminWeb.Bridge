@@ -8,7 +8,7 @@ This Websocket will then function as a "Database Connection", Relaying Commands 
 ## Sentry
 
 Version 0.1.2 Now comes with a Sentry Setup;
-This is currently Defaulted to on, which can be disabled via the environment Variable `BRIDGE_DISABLE_TELEMETRY`.
+This is currently Defaulted to off, which can be enabled via the environment Variable `BRIDGE_ENABLE_TELEMETRY`.
 Due to Complications with PGK (The Packaging that creates the Binaries), I've Shipped a custom written Sentry Client that is based on Axios.
 
 Out of Security Reasons, It will Redact any Environment Variables set and will only supply the Error as well as the Connected Server ID (SS14.AdminWeb Specific)
@@ -17,7 +17,7 @@ The DSN URL Will be Supplied by the SS14.AdminWeb Environment when the Bridge ge
 
 ## Setup
 
-Clone the Repository or Download the Release Binaries and put them on your Local Postgres Host.
+Clone the Repository or [Download the Release Binaries](https://github.com/Myzumi/SS14.AdminWeb.Bridge/releases) and put them on your Local Postgres Host.
 Either Copy the Repositories `.env.example` or run the bridge for the first time and it creates it next to the Binary.
 Note: Any Files the bridge needs or creates are put next to the Binary or its local .bridge folder next to it.
 
