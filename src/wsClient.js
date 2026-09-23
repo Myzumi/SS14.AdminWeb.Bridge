@@ -2,6 +2,7 @@ const WebSocket = require("ws");
 const axios = require("axios");
 const crypto = require("crypto");
 const logger = require("./logger");
+const { VERSION } = require("./config");
 const { deriveSessionKeys } = require("./crypto/handshake");
 const { createEnvelope } = require("./crypto/envelope");
 const { createGuardedPool, testConnection } = require("./postgres");
@@ -138,6 +139,7 @@ function startWsClient(config, identity) {
           type: "hello",
           publicKey: identity.publicKeyBase64,
           nonce: localNonce.toString("base64"),
+          version: VERSION,
         }),
       );
     });
