@@ -122,9 +122,9 @@ function createGuardedPool(pgConfig, blockWriteCommands) {
 
     const client = await pool.connect();
     try {
-      await client.query("BEGIN TRANSACTION READ ONLY");
-      if (timeoutMs > 0) {
-        await client.query(`SET LOCAL statement_timeout = ${timeoutMs}`);
+      if (client.timeoutMs !== timeoutMs) {
+        await client.query(`SET statement_timeout = ${timeoutMs}`);
+        client.timeoutMs = timeoutMs;
       }
       return await client.query({
         text: sql,
@@ -132,7 +132,6 @@ function createGuardedPool(pgConfig, blockWriteCommands) {
         queryMode: "extended", // no multiple statements
       });
     } finally {
-      await client.query("ROLLBACK").catch(() => {});
       client.release();
     }
   };
