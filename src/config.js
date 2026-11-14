@@ -16,14 +16,14 @@ BRIDGE_TOKEN=
 # Base URL of the SS14.AdminWeb webserver this Bridge reports to
 WEBSERVER_URL=https://ss14adminweb.myzumi.dev
 
-# Local Postgres connection for the SS14 game server database
+# Local Postgres connection for the SS14 game server database (use a read-only role, see README)
 PG_HOST=localhost
 PG_PORT=5432
 PG_DATABASE=ss14
-PG_USER=postgres
+PG_USER=adminweb_bridge
 PG_PASSWORD=
 
-# Reject DELETE/UPDATE/INSERT/DROP/ALTER/TRUNCATE queries coming through the tunnel
+# Only allow single SELECT/WITH queries, run in a read-only transaction
 BLOCK_WRITE_COMMANDS=true
 
 # Encrypt tunnel traffic on top of TLS using an X25519/AES-256-GCM handshake
