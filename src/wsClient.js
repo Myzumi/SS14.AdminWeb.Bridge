@@ -5,7 +5,7 @@ const logger = require("./logger");
 const { VERSION } = require("./config");
 const { deriveSessionKeys } = require("./crypto/handshake");
 const { createEnvelope } = require("./crypto/envelope");
-const { createGuardedPool, testConnection } = require("./postgres");
+const { createGuardedPool, testConnection, checkRole } = require("./postgres");
 
 const RECONNECT_MIN_MS = 2000;
 const RECONNECT_MAX_MS = 60000;
@@ -18,7 +18,7 @@ async function runQuery(pool, request, stats) {
   const startedAt = Date.now();
 
   try {
-    const result = await pool.query(sql, params);
+    const result = await pool.query({ text: sql, timeoutMs: request.timeoutMs }, params);
     const ms = Date.now() - startedAt;
     stats.queries += 1;
     stats.latencyMs += ms;
@@ -71,6 +71,7 @@ function startWsClient(config, identity) {
   const stats = { queries: 0, failed: 0, latencyMs: 0 };
 
   const pool = createGuardedPool(config.pg, config.blockWriteCommands);
+  let roleChecked = false;
 
   function reportStats() {
     if (stats.queries === 0) return; // stay quiet when nothing happened this window
@@ -116,6 +117,10 @@ function startWsClient(config, identity) {
     }
 
     const pgOk = await testConnection(pool);
+    if (pgOk && !roleChecked) {
+      roleChecked = true;
+      await checkRole(pool);
+    }
     if (!pgOk)
       logger.warn(
         "[Bridge] Postgres connection test failed, tunnel will still connect but queries will fail",
@@ -148,8 +153,10 @@ function startWsClient(config, identity) {
       let message;
       try {
         const parsed = JSON.parse(raw.toString());
-        message =
-          envelope && parsed.n && parsed.ct ? envelope.open(parsed) : parsed;
+        if (envelope && !(parsed.n && parsed.ct)) {
+          throw new Error("unencrypted message on an encrypted tunnel");
+        }
+        message = envelope ? envelope.open(parsed) : parsed;
       } catch (error) {
         logger.warn(
           `[Bridge] Received malformed tunnel message: ${error.message}`,

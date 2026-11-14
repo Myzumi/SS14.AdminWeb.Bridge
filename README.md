@@ -15,11 +15,25 @@ Env vars, mostly self explanatory:
 
 - `BRIDGE_TOKEN` - required, from DataSourceSettings
 - `WEBSERVER_URL` - defaults to `https://ss14adminweb.myzumi.dev`
-- `PG_HOST` / `PG_PORT` / `PG_DATABASE` / `PG_USER` / `PG_PASSWORD` - your local Postgres
-- `BLOCK_WRITE_COMMANDS` - blocks DELETE/UPDATE/INSERT/DROP/ALTER/TRUNCATE through the tunnel, on by default
+- `PG_HOST` / `PG_PORT` / `PG_DATABASE` / `PG_USER` / `PG_PASSWORD` - your local Postgres, ideally a read-only role (see below)
+- `BLOCK_WRITE_COMMANDS` - only single SELECT/WITH queries, run read-only, on by default
 - `ENCRYPT_TUNNEL` - X25519 + AES-256-GCM on top of TLS, on by default
 - `AUTO_UPDATE` - checks GitHub Releases and hot-swaps to a newer checksum-verified binary with zero downtime, off by default
 - `UPDATE_CHECK_INTERVAL_MS` / `UPDATE_REPO` - only matter if `AUTO_UPDATE` is on
+
+## A read-only database role
+
+Better not to run the Bridge as `postgres`. Something like this, once:
+
+```sql
+CREATE ROLE adminweb_bridge LOGIN PASSWORD 'pick-a-long-one';
+GRANT CONNECT ON DATABASE ss14 TO adminweb_bridge;
+GRANT USAGE ON SCHEMA public TO adminweb_bridge;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO adminweb_bridge;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO adminweb_bridge;
+```
+
+Then set `PG_USER` and `PG_PASSWORD` to it. The Bridge warns on start if it's running as a superuser.
 
 ## Running as a service
 
